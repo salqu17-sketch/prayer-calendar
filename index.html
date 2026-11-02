@@ -43,6 +43,7 @@ select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid 
 .dur input{text-align:center;font-variant-numeric:tabular-nums;padding:8px 6px}
 .dur span{color:var(--muted);font-size:.84rem;font-weight:400}
 .durhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.locate{display:grid;gap:6px}
 button.link{background:none;border:0;padding:0;color:var(--accent);font-weight:500;font-size:.86rem;text-decoration:underline;text-underline-offset:3px}
 h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
@@ -71,6 +72,10 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
   </header>
 
   <form class="card" id="f" novalidate>
+    <div class="locate" id="locateBox" hidden>
+      <button type="button" class="ghost" id="locate">📍 تحديد المدينة من موقعي الحالي</button>
+      <p class="hint" id="locateSt" role="status"></p>
+    </div>
     <div class="row">
       <label for="country">الدولة<select id="country"></select></label>
       <label for="city">المدينة<select id="city"></select></label>
@@ -226,7 +231,7 @@ function fillCities(){const c=country();$('city').innerHTML='';c[4].forEach((x,i
   $('city').add(new Option('موقع آخر بالإحداثيات…','custom'));$('method').value=c[2];onChange()}
 function place(){const c=country();
   if($('city').value==='custom'){const lat=parseFloat($('lat').value),lng=parseFloat($('lng').value);
-    const tz=c[3]||c[4][0][4];return{lat,lng,tz,name:($('cname').value.trim()||'موقع مخصص'),slug:c[0]+'-custom',ok:isFinite(lat)&&isFinite(lng)&&Math.abs(lat)<=66&&Math.abs(lng)<=180}}
+    const tz=geoTz||c[3]||c[4][0][4];return{lat,lng,tz,name:($('cname').value.trim()||'موقع مخصص'),slug:c[0]+'-custom',ok:isFinite(lat)&&isFinite(lng)&&Math.abs(lat)<=66&&Math.abs(lng)<=180}}
   const x=c[4][+$('city').value];return{lat:x[2],lng:x[3],tz:x[4]||c[3],name:x[1],slug:x[0],ok:true}}
 function fmt(ms,tz){return new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(ms))}
 function localHour(ms,tz){const [h,m]=fmt(ms,tz).split(':').map(Number);return h+m/60}
@@ -286,10 +291,26 @@ let saved=null;try{saved=JSON.parse(localStorage.getItem('prayerDurs')||'null')}
 setDurs(saved&&DK.every(k=>saved[k]>=1&&saved[k]<=240)?saved:DEFAULT_DURS);
 DK.forEach(k=>$('dur-'+k).addEventListener('input',()=>{if(!durErr()){try{localStorage.setItem('prayerDurs',JSON.stringify(durs()))}catch(e){}}onChange()}));
 $('resetDur').addEventListener('click',()=>{setDurs(DEFAULT_DURS);try{localStorage.removeItem('prayerDurs')}catch(e){}onChange()});
+let geoTz=null;
+function dist(a,b,c,d){const R=6371,x=(c-a)*d2r,y=(d-b)*d2r,h=Math.sin(x/2)**2+Math.cos(a*d2r)*Math.cos(c*d2r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+function nearest(lat,lng){let best=null;for(const c of C)c[4].forEach((x,i)=>{const k=dist(lat,lng,x[2],x[3]);if(!best||k<best.km)best={c,i,km:k,x}});return best}
+function applyLocation(lat,lng){const n=nearest(lat,lng);
+  $('country').value=n.c[0];fillCities();
+  if(n.km<=35){geoTz=null;$('city').value=String(n.i);onChange();
+    $('locateSt').textContent='اختير أقرب مدينة في القائمة: '+n.x[1]+' (على بعد '+AR(Math.round(n.km))+' كم تقريبًا).'}
+  else{let tz=null;try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone}catch(e){}
+    geoTz=tz;$('city').value='custom';$('lat').value=lat.toFixed(4);$('lng').value=lng.toFixed(4);$('cname').value='موقعي';onChange();
+    $('locateSt').textContent='موقعك ليس قريبًا من مدينة في القائمة، فاستُعملت إحداثياته مباشرة. واختيرت '+n.c[1]+' لأنها أقرب دولة في القائمة، ومنها أُخذت طريقة الحساب؛ فغيّرها إن لم تناسب بلدك.'}}
+$('locate').addEventListener('click',()=>{if(!navigator.geolocation){$('locateSt').textContent='متصفحك لا يتيح تحديد الموقع.';return}
+  $('locate').disabled=true;$('locateSt').textContent='جارٍ تحديد موقعك…';
+  navigator.geolocation.getCurrentPosition(pos=>{$('locate').disabled=false;applyLocation(pos.coords.latitude,pos.coords.longitude)},
+    err=>{$('locate').disabled=false;$('locateSt').textContent=err.code===1?'لم يُسمح بالوصول إلى الموقع. يمكنك اختيار المدينة من القائمة.':'تعذّر تحديد موقعك الآن. اختر المدينة من القائمة.'},
+    {enableHighAccuracy:false,timeout:15000,maximumAge:600000})});
+['country','city'].forEach(id=>$(id).addEventListener('change',()=>{geoTz=null;$('locateSt').textContent=''}));
 const t0=todayIn('Asia/Riyadh');$('from').value=t0;$('to').value=addYearMinus1(t0);
 fillCities();
 const IN_CLAUDE=!!(window.claude&&window.claude.use);
-if(!IN_CLAUDE){$('zipHint').hidden=true;$('icsHint').hidden=false}
+if(!IN_CLAUDE){$('zipHint').hidden=true;$('icsHint').hidden=false;$('locateBox').hidden=false}
 (async()=>{try{downloads=IN_CLAUDE?await window.claude.use('downloads'):null}catch(e){downloads=null}
   if(!downloads&&IN_CLAUDE)$('copy').hidden=false})();
 </script>
