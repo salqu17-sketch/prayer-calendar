@@ -40,14 +40,12 @@ select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid 
 .durs li{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.86rem;font-variant-numeric:tabular-nums}
 .durs b{font-weight:600}
 h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0}
-.strip{direction:ltr;position:relative;height:56px;border-radius:10px;overflow:hidden;background:var(--night)}
-.strip .day{position:absolute;top:0;bottom:0;background:var(--sky)}
-.strip .ev{position:absolute;top:10px;bottom:10px;background:var(--accent);border-radius:4px;min-width:3px}
-.ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:.75rem;font-variant-numeric:tabular-nums;direction:ltr}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:start;font-weight:400}
 th{color:var(--muted);font-size:.85rem}
-td.t{direction:ltr;text-align:end;font-weight:600}
+th.h,td.t{text-align:center}
+td.t{font-weight:600}
+td.e{color:var(--muted);font-weight:400}
 .actions{display:grid;gap:10px}
 button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:13px 18px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
 button[disabled]{opacity:.55;cursor:default}
@@ -96,10 +94,8 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
   </form>
 
   <section class="card" aria-labelledby="pv">
-    <h2 id="pv">أول يوم في المدة</h2>
-    <div class="strip" id="strip" aria-hidden="true"></div>
-    <div class="ticks" aria-hidden="true"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
-    <table><thead><tr><th>الصلاة</th><th style="text-align:end">الأذان</th></tr></thead><tbody id="tb"></tbody></table>
+    <h2 id="pv">مواعيد أول يوم كما ستظهر في تقويمك</h2>
+    <table><thead><tr><th>الصلاة</th><th class="h">الأذان</th><th class="h">ينتهي الموعد</th></tr></thead><tbody id="tb"></tbody></table>
     <p class="hint" id="tzHint"></p>
   </section>
 
@@ -231,16 +227,14 @@ function onChange(){
   const p=place(),M=METHODS[$('method').value];
   $('methodHint').textContent='الفجر عند '+AR(M.f)+'° تحت الأفق، والعشاء '+(M.iMin?('بعد المغرب بـ'+AR(M.iMin)+' دقيقة'+(M.ramadan?'، و'+AR(M.iMin+30)+' في رمضان':'')):('عند '+AR(M.i)+'°'))+'. العصر حين يصير ظل الشيء مثله.';
   const err=validRange();
-  if(!p.ok){$('st').textContent='أدخل خط العرض والطول للموقع.';$('st').className='status err';$('dl').disabled=true;$('tb').innerHTML='';$('strip').innerHTML='';return}
+  if(!p.ok){$('st').textContent='أدخل خط العرض والطول للموقع.';$('st').className='status err';$('dl').disabled=true;$('tb').innerHTML='';return}
   if(err){$('st').textContent=err;$('st').className='status err';$('dl').disabled=true}else{$('st').textContent='';$('st').className='status';$('dl').disabled=false}
   const day=$('from').value||todayIn(p.tz);const ev=buildEvents(day,day,p.lat,p.lng,$('method').value);
-  const strip=$('strip');strip.innerHTML='';
-  const sr=localHour(ev[0].start,p.tz),ss=localHour(ev[3].start,p.tz);
-  const dayEl=document.createElement('div');dayEl.className='day';dayEl.style.left=(sr/24*100)+'%';dayEl.style.width=((ss-sr)/24*100)+'%';strip.appendChild(dayEl);
   $('tb').innerHTML='';
-  for(const e of ev){const h=localHour(e.start,p.tz);const b=document.createElement('div');b.className='ev';b.title=e.name;
-    b.style.left=(h/24*100)+'%';b.style.width=(e.dur/1440*100)+'%';strip.appendChild(b);
-    const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=e.name;const t=document.createElement('td');t.className='t';t.textContent=fmt(e.start,p.tz);tr.append(a,t);$('tb').appendChild(tr)}
+  for(const e of ev){const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=e.name;
+    const t=document.createElement('td');t.className='t';t.textContent=fmt(e.start,p.tz);
+    const x=document.createElement('td');x.className='t e';x.textContent=fmt(e.start+e.dur*60000,p.tz);
+    tr.append(a,t,x);$('tb').appendChild(tr)}
   $('tzHint').textContent='الأوقات بتوقيت المدينة ('+p.tz+'). يحفظ الملف كل موعد بوقته المطلق، فيظهر صحيحًا في أي منطقة زمنية.';
 }
 // zip (stored, no compression)
