@@ -62,7 +62,7 @@ while day<=end:
     rows.append((day,[hm(day,T[k]).strftime('%H:%M') for k in 'fdami']))
     day+=dt.timedelta(1)
 L.append('END:VCALENDAR')
-open(f'/home/claude/{SLUG}-prayer-times.ics','w',encoding='utf-8',newline='').write('\r\n'.join(L)+'\r\n')
+open(f'{SLUG}-prayer-times.ics','w',encoding='utf-8',newline='').write('\r\n'.join(L)+'\r\n')
 print(n,'events')
 for d,r in rows:
     if d in (dt.date(2026,10,12),dt.date(2026,12,21),dt.date(2027,2,10),dt.date(2027,6,21),dt.date(2027,10,11)): print(d,r)
