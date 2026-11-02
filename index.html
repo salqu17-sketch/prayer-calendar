@@ -36,9 +36,14 @@ label{display:grid;gap:6px;font-weight:500;font-size:.92rem;min-width:0}
 select,input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;width:100%;min-width:0}
 select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hint{color:var(--muted);font-size:.84rem;margin:0}
-.durs{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
-.durs li{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.86rem;font-variant-numeric:tabular-nums}
-.durs b{font-weight:600}
+.durs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:480px){.durs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.durs label{gap:4px;font-size:.88rem}
+.dur{display:flex;align-items:center;gap:6px}
+.dur input{text-align:center;font-variant-numeric:tabular-nums;padding:8px 6px}
+.dur span{color:var(--muted);font-size:.84rem;font-weight:400}
+.durhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+button.link{background:none;border:0;padding:0;color:var(--accent);font-weight:500;font-size:.86rem;text-decoration:underline;text-underline-offset:3px}
 h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:start;font-weight:400}
@@ -84,11 +89,16 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
     <label for="method">طريقة الحساب<select id="method"></select></label>
     <p class="hint" id="methodHint"></p>
     <div style="display:grid;gap:8px">
-      <span style="font-weight:500;font-size:.92rem">مدة كل موعد من الأذان، وتنبيه قبله بعشر دقائق</span>
-      <ul class="durs">
-        <li>🌅 الفجر <b>٤٠</b> د</li><li>☀️ الظهر <b>٣٠</b> د</li><li>🕌 الجمعة <b>٥٠</b> د</li>
-        <li>🌤️ العصر <b>٣٠</b> د</li><li>🌇 المغرب <b>٢٠</b> د</li><li>🌙 العشاء <b>٣٠</b> د</li>
-      </ul>
+      <div class="durhead"><span style="font-weight:500;font-size:.92rem">مدة كل موعد في التقويم، بالدقائق من الأذان</span><button type="button" class="link" id="resetDur">استعادة المدد الافتراضية</button></div>
+      <div class="durs">
+        <label for="dur-f">🌅 الفجر<span class="dur"><input id="dur-f" type="number" min="1" max="240" step="1" inputmode="numeric"><span>دقيقة</span></span></label>
+        <label for="dur-d">☀️ الظهر<span class="dur"><input id="dur-d" type="number" min="1" max="240" step="1" inputmode="numeric"><span>دقيقة</span></span></label>
+        <label for="dur-j">🕌 الجمعة<span class="dur"><input id="dur-j" type="number" min="1" max="240" step="1" inputmode="numeric"><span>دقيقة</span></span></label>
+        <label for="dur-a">🌤️ العصر<span class="dur"><input id="dur-a" type="number" min="1" max="240" step="1" inputmode="numeric"><span>دقيقة</span></span></label>
+        <label for="dur-m">🌇 المغرب<span class="dur"><input id="dur-m" type="number" min="1" max="240" step="1" inputmode="numeric"><span>دقيقة</span></span></label>
+        <label for="dur-i">🌙 العشاء<span class="dur"><input id="dur-i" type="number" min="1" max="240" step="1" inputmode="numeric"><span>دقيقة</span></span></label>
+      </div>
+      <p class="hint">وفي كل موعد تنبيه قبل الأذان بعشر دقائق.</p>
     </div>
   </form>
 
@@ -155,12 +165,13 @@ function computeDay(y,m,d,lat,lng,method,isRamadan){
 }
 const UQ=(()=>{try{return new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn',{month:'numeric',timeZone:'UTC'})}catch(e){return null}})();
 function hijriMonth(y,m,d){if(!UQ)return 0;const p=UQ.formatToParts(new Date(Date.UTC(y,m-1,d,12)));const x=p.find(o=>o.type==='month');return x?parseInt(x.value,10):0}
-const PRAYERS=[['f','🌅 الفجر',40],['d','☀️ الظهر',30],['a','🌤️ العصر',30],['m','🌇 المغرب',20],['i','🌙 العشاء',30]];
+const PRAYERS=[['f','🌅 الفجر'],['d','☀️ الظهر'],['a','🌤️ العصر'],['m','🌇 المغرب'],['i','🌙 العشاء']];
+const DEFAULT_DURS={f:40,d:30,j:50,a:30,m:20,i:30};
 function eachDay(from,to,fn){let [y,m,d]=from.split('-').map(Number);const end=Date.UTC(...to.split('-').map((v,i)=>i==1?v-1:+v));
   for(let ms=Date.UTC(y,m-1,d);ms<=end;ms+=86400000){const D=new Date(ms);fn(D.getUTCFullYear(),D.getUTCMonth()+1,D.getUTCDate(),D.getUTCDay())}}
-function buildEvents(from,to,lat,lng,method){const out=[];
+function buildEvents(from,to,lat,lng,method,durs){durs=durs||DEFAULT_DURS;const out=[];
   eachDay(from,to,(y,m,d,wd)=>{const T=computeDay(y,m,d,lat,lng,method,hijriMonth(y,m,d)===9);
-    for(const [k,name,dur] of PRAYERS){const fri=k==='d'&&wd===5;out.push({start:T[k],dur:fri?50:dur,name:fri?'🕌 الجمعة':name})}});return out}
+    for(const [k,name] of PRAYERS){const fri=k==='d'&&wd===5;out.push({start:T[k],dur:fri?durs.j:durs[k],name:fri?'🕌 الجمعة':name})}});return out}
 function stamp(ms){return new Date(ms).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'')}
 function buildICS(events,calName,slug){const now=stamp(Date.now());
   const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Prayer Calendar Generator//AR','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:'+calName];
@@ -225,10 +236,10 @@ function onChange(){
   $('customBox').hidden=$('city').value!=='custom';
   const p=place(),M=METHODS[$('method').value];
   $('methodHint').textContent='الفجر عند '+AR(M.f)+'° تحت الأفق، والعشاء '+(M.iMin?('بعد المغرب بـ'+AR(M.iMin)+' دقيقة'+(M.ramadan?'، و'+AR(M.iMin+30)+' في رمضان':'')):('عند '+AR(M.i)+'°'))+'. العصر حين يصير ظل الشيء مثله.';
-  const err=validRange();
+  const err=validRange()||durErr();
   if(!p.ok){$('st').textContent='أدخل خط العرض والطول للموقع.';$('st').className='status err';$('dl').disabled=true;$('tb').innerHTML='';return}
   if(err){$('st').textContent=err;$('st').className='status err';$('dl').disabled=true}else{$('st').textContent='';$('st').className='status';$('dl').disabled=false}
-  const day=$('from').value||todayIn(p.tz);const ev=buildEvents(day,day,p.lat,p.lng,$('method').value);
+  const day=$('from').value||todayIn(p.tz);const ev=buildEvents(day,day,p.lat,p.lng,$('method').value,durs());
   $('tb').innerHTML='';
   for(const e of ev){const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=e.name;
     const t=document.createElement('td');t.className='t';t.textContent=fmt(e.start,p.tz);
@@ -245,10 +256,10 @@ function zip(name,data){const enc=new TextEncoder(),fn=enc.encode(name),crc=crc3
   const end=new DataView(new ArrayBuffer(22));end.setUint32(0,0x06054b50,true);end.setUint16(8,1,true);end.setUint16(10,1,true);end.setUint32(12,cdSize,true);end.setUint32(16,cdOff,true);
   return new Blob([lh,fn,data,ch,fn,end],{type:'application/zip'})}
 let lastICS='';
-function generate(){const p=place();const ev=buildEvents($('from').value,$('to').value,p.lat,p.lng,$('method').value);
+function generate(){const p=place();const ev=buildEvents($('from').value,$('to').value,p.lat,p.lng,$('method').value,durs());
   const ics=buildICS(ev,'أوقات الصلاة - '+p.name,p.slug);lastICS=ics;
   const base=$('from').value+'-'+p.slug+'-prayer-times';return{ics,base,count:ev.length}}
-$('dl').addEventListener('click',async()=>{if(validRange()||!place().ok)return;
+$('dl').addEventListener('click',async()=>{if(validRange()||durErr()||!place().ok)return;
   $('dl').disabled=true;$('st').className='status';$('st').textContent='جارٍ الإنشاء…';
   try{const g=generate();
     if(!downloads){
@@ -261,12 +272,20 @@ $('dl').addEventListener('click',async()=>{if(validRange()||!place().ok)return;
   catch(e){$('st').className='status err';
     $('st').textContent=e&&e.code==='declined'?'أُلغي التنزيل.':e&&e.code==='rate_limited'?'نافذة التنزيل مفتوحة بالفعل. أكملها أو انتظر قليلًا.':'تعذّر التنزيل في هذا العرض. جرّب نسخ المحتوى.';
     if(!(e&&e.code==='declined'))$('copy').hidden=false}
-  finally{$('dl').disabled=!!validRange()}});
+  finally{$('dl').disabled=!!(validRange()||durErr())}});
 $('copy').addEventListener('click',async()=>{if(!lastICS)generate();
   try{await navigator.clipboard.writeText(lastICS);$('st').className='status';$('st').textContent='نُسخ المحتوى. الصقه في ملف نصي واحفظه بامتداد ‎.ics‎.'}
   catch(e){$('st').className='status err';$('st').textContent='تعذّر النسخ في هذا العرض.'}});
 ['country'].forEach(id=>$(id).addEventListener('change',fillCities));
 ['city','method','from','to','lat','lng','cname'].forEach(id=>$(id).addEventListener('input',onChange));
+const DK=Object.keys(DEFAULT_DURS);
+function durs(){const o={};for(const k of DK){o[k]=parseInt($('dur-'+k).value,10)}return o}
+function durErr(){for(const k of DK){const v=parseInt($('dur-'+k).value,10);if(!(v>=1&&v<=240))return 'اجعل مدة كل موعد بين دقيقة و٢٤٠ دقيقة.'}return ''}
+function setDurs(o){for(const k of DK)$('dur-'+k).value=o[k]}
+let saved=null;try{saved=JSON.parse(localStorage.getItem('prayerDurs')||'null')}catch(e){}
+setDurs(saved&&DK.every(k=>saved[k]>=1&&saved[k]<=240)?saved:DEFAULT_DURS);
+DK.forEach(k=>$('dur-'+k).addEventListener('input',()=>{if(!durErr()){try{localStorage.setItem('prayerDurs',JSON.stringify(durs()))}catch(e){}}onChange()}));
+$('resetDur').addEventListener('click',()=>{setDurs(DEFAULT_DURS);try{localStorage.removeItem('prayerDurs')}catch(e){}onChange()});
 const t0=todayIn('Asia/Riyadh');$('from').value=t0;$('to').value=addYearMinus1(t0);
 fillCities();
 const IN_CLAUDE=!!(window.claude&&window.claude.use);
