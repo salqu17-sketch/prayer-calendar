@@ -43,9 +43,8 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:start;font-weight:400}
 th{color:var(--muted);font-size:.85rem}
-th.h,td.t{text-align:center}
+th.h,td.t{text-align:end}
 td.t{font-weight:600}
-td.e{color:var(--muted);font-weight:400}
 .actions{display:grid;gap:10px}
 button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:13px 18px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
 button[disabled]{opacity:.55;cursor:default}
@@ -94,8 +93,8 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
   </form>
 
   <section class="card" aria-labelledby="pv">
-    <h2 id="pv">مواعيد أول يوم كما ستظهر في تقويمك</h2>
-    <table><thead><tr><th>الصلاة</th><th class="h">الأذان</th><th class="h">ينتهي الموعد</th></tr></thead><tbody id="tb"></tbody></table>
+    <h2 id="pv">أوقات الأذان في أول يوم</h2>
+    <table><thead><tr><th>الصلاة</th><th class="h">الأذان</th></tr></thead><tbody id="tb"></tbody></table>
     <p class="hint" id="tzHint"></p>
   </section>
 
@@ -233,8 +232,7 @@ function onChange(){
   $('tb').innerHTML='';
   for(const e of ev){const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=e.name;
     const t=document.createElement('td');t.className='t';t.textContent=fmt(e.start,p.tz);
-    const x=document.createElement('td');x.className='t e';x.textContent=fmt(e.start+e.dur*60000,p.tz);
-    tr.append(a,t,x);$('tb').appendChild(tr)}
+    tr.append(a,t);$('tb').appendChild(tr)}
   $('tzHint').textContent='الأوقات بتوقيت المدينة ('+p.tz+'). يحفظ الملف كل موعد بوقته المطلق، فيظهر صحيحًا في أي منطقة زمنية.';
 }
 // zip (stored, no compression)
