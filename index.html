@@ -44,6 +44,11 @@ select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid 
 .dur span{color:var(--muted);font-size:.84rem;font-weight:400}
 .durhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .locate{display:grid;gap:6px}
+.guide{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:16px}
+.guide details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--surface)}
+.guide summary{cursor:pointer;font-weight:600}
+.guide ol{margin:10px 0 2px;padding-inline-start:1.3em;display:grid;gap:6px;font-size:.92rem}
+.tag{font-weight:400;font-size:.78rem;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 8px;margin-inline-start:6px}
 button.link{background:none;border:0;padding:0;color:var(--accent);font-weight:500;font-size:.86rem;text-decoration:underline;text-underline-offset:3px}
 h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
@@ -117,8 +122,22 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
     <button id="dl" type="button">تنزيل ملف التقويم</button>
     <button id="copy" type="button" class="ghost" hidden>نسخ محتوى الملف</button>
     <p class="status" id="st" role="status"></p>
-    <p class="hint" id="icsHint" hidden>استورد الملف من إعدادات تقويم قوقل ← «استيراد وتصدير». والأولى أن تستورده في تقويم جديد مستقل.</p>
-    <p class="hint" id="zipHint">يُنزَّل الملف مضغوطًا (‎.zip‎) لأن هذه الصفحة لا تُنزّل ملفات ‎.ics‎ مباشرة. افتحه، ثم استورد ملف ‎.ics‎ الذي بداخله من إعدادات تقويم قوقل ← «استيراد وتصدير». والأولى أن تستورده في تقويم جديد مستقل.</p>
+    <p class="hint" id="zipHint">يُنزَّل الملف مضغوطًا (‎.zip‎) لأن هذه الصفحة لا تُنزّل ملفات ‎.ics‎ مباشرة. افتحه أولًا، ثم أضف ملف ‎.ics‎ الذي بداخله بإحدى الطرق الآتية.</p>
+    <section class="guide" aria-labelledby="gh">
+      <h2 id="gh">إضافة الملف إلى تقويمك</h2>
+      <p class="hint">لا تستطيع صفحة ويب أن تكتب في تقويم جهازك مباشرة؛ فالملف هو الطريق، وفتحه يسلّمه إلى تطبيق التقويم. وأيًّا كان التطبيق، أنشئ له تقويمًا جديدًا مستقلًّا قبل الإضافة، ليسهل حذف المواعيد كلها دفعة واحدة إن احتجت.</p>
+      <details id="g-mac"><summary>تقويم Apple على ماك <span class="tag">الأسرع لملف كبير</span></summary>
+        <ol><li>في تطبيق التقويم: «ملف» ← «تقويم جديد»، وسمّه مثلًا «مواقيت الصلاة».</li>
+        <li>«ملف» ← «استيراد»، ثم اختر الملف.</li>
+        <li>اختر التقويم الجديد من القائمة، ثم «موافق». وإن كان حسابك في iCloud، ظهرت المواعيد في آيفون وآيباد تلقائيًا.</li></ol></details>
+      <details id="g-ios"><summary>تقويم Apple على آيفون وآيباد</summary>
+        <ol><li>نزّل الملف من Safari، ثم افتح قائمة التنزيلات واضغط الملف. وإن لم يُفتح، افتحه من تطبيق «الملفات».</li>
+        <li>يعرض التقويم المواعيد، فاضغط «إضافة الكل».</li>
+        <li>تُضاف المواعيد إلى التقويم الافتراضي في الإعدادات ← التقويم، فاجعله التقويم الجديد قبل الإضافة. ولملف سنة كاملة، الإضافة من ماك أسرع وأضمن.</li></ol></details>
+      <details id="g-google"><summary>تقويم قوقل</summary>
+        <ol><li>من متصفح على الحاسوب (لا يتيح تطبيق الجوال الاستيراد): الإعدادات ← «إضافة تقويم» ← «إنشاء تقويم جديد».</li>
+        <li>«استيراد وتصدير» ← اختر الملف ← اختر التقويم الجديد ← «استيراد».</li></ol></details>
+    </section>
   </div>
 </main>
 
@@ -310,7 +329,9 @@ $('locate').addEventListener('click',()=>{if(!navigator.geolocation){$('locateSt
 const t0=todayIn('Asia/Riyadh');$('from').value=t0;$('to').value=addYearMinus1(t0);
 fillCities();
 const IN_CLAUDE=!!(window.claude&&window.claude.use);
-if(!IN_CLAUDE){$('zipHint').hidden=true;$('icsHint').hidden=false;$('locateBox').hidden=false}
+if(!IN_CLAUDE){$('zipHint').hidden=true;$('locateBox').hidden=false}
+(()=>{const u=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1),mac=/Macintosh/.test(u)&&!ios;
+  $(ios?'g-ios':mac?'g-mac':'g-google').open=true})();
 (async()=>{try{downloads=IN_CLAUDE?await window.claude.use('downloads'):null}catch(e){downloads=null}
   if(!downloads&&IN_CLAUDE)$('copy').hidden=false})();
 </script>
