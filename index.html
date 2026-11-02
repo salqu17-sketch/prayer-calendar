@@ -8,7 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
-/* Layout: one narrow column — form card, then a 24-hour strip of the first day, then the download action */
+/* Layout: portrait is one column (place/dates bar, options, preview + download, guide).
+   Landscape from 700px puts the bar across the top and options beside the preview. */
 :root{
   --bg:#EDF0EF; --surface:#FBFCFC; --ink:#17262B; --muted:#5B6B70; --line:#D3DBDA;
   --accent:#A35A1F; --accent-ink:#FFFFFF; --sky:#C9D6DA; --night:#2B3E47;
@@ -33,7 +34,13 @@ h1{font-family:var(--display);font-weight:700;font-size:2.1rem;line-height:1.25;
 .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:480px){.row{grid-template-columns:1fr}}
 label{display:grid;gap:6px;font-weight:500;font-size:.92rem;min-width:0}
-select,input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;width:100%;min-width:0}
+html{overflow-x:clip}
+select,input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;width:100%;min-width:0;max-width:100%}
+/* iOS Safari sizes date inputs to their content and ignores width without this */
+input[type="date"]{-webkit-appearance:none;appearance:none;display:block;min-height:2.85em}
+input[type="date"]::-webkit-date-and-time-value{text-align:start}
+.locate .short{display:none}
+.locate .hint:empty{display:none}
 select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hint{color:var(--muted);font-size:.84rem;margin:0}
 .durs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
@@ -44,7 +51,11 @@ select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid 
 .dur span{color:var(--muted);font-size:.84rem;font-weight:400}
 .durhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .locate{display:grid;gap:6px}
-.guide{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:16px}
+.guide>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px}
+.guide>summary::-webkit-details-marker{display:none}
+.guide>summary::after{content:"";width:.5em;height:.5em;border-inline-end:2px solid var(--muted);border-block-end:2px solid var(--muted);transform:rotate(45deg);margin-top:-.25em}
+.guide[open]>summary::after{transform:rotate(-135deg);margin-top:.2em}
+.guide-body{display:grid;gap:10px;margin-top:10px}
 .guide details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--surface)}
 .guide summary{cursor:pointer;font-weight:600}
 .guide ol{margin:10px 0 2px;padding-inline-start:1.3em;display:grid;gap:6px;font-size:.92rem}
@@ -66,6 +77,47 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .status.err{color:#FF8A7A}}
 .custom{display:grid;gap:14px}
 @media (prefers-reduced-motion:no-preference){button{transition:filter .15s}button:hover:not([disabled]){filter:brightness(1.08)}}
+.guide{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 22px}
+.guide .guide-body details{background:var(--bg)}
+
+@media (orientation:landscape) and (min-width:700px){
+  main{max-width:1180px;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;
+    grid-template-areas:"head head" "bar bar" "opts side" "guide guide";align-items:start}
+  header{grid-area:head}
+  .bar{grid-area:bar;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:14px;
+    grid-template-areas:"place dates locate" "custom custom custom"}
+  .bar .place{grid-area:place}.bar .dates{grid-area:dates}
+  .bar .locate{grid-area:locate;max-width:15rem}
+  .bar .custom{grid-area:custom;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end}
+  .opts{grid-area:opts}
+  .side{grid-area:side;position:sticky;top:16px}
+  .guide{grid-area:guide}
+  .guide-body{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}
+  .guide-body>.hint{grid-column:1/-1}
+}
+/* Short landscape screens (phones): tighten spacing so the bar and both panels fit */
+@media (orientation:landscape) and (min-width:700px) and (max-height:560px){
+  body{padding-block:12px 20px;font-size:15px;line-height:1.5}
+  main{gap:10px}
+  header{grid-template-columns:auto minmax(0,1fr);align-items:baseline;gap:14px}
+  h1{font-size:1.35rem}
+  .lede{font-size:.85rem}
+  .card{padding:12px 14px;gap:10px;border-radius:12px}
+  .row{gap:10px}
+  label{gap:3px;font-size:.84rem}
+  select,input{padding:6px 10px}
+  input[type="date"]{min-height:2.3em}
+  .locate .long{display:none}.locate .short{display:inline}
+  .locate button{padding:8px 12px}
+  .durs{gap:8px}
+  .dur span{display:none}
+  .dur input{padding:5px 4px}
+  td,th{padding:3px 4px}
+  .side{top:8px}
+  button{padding:10px 14px}
+  .guide{padding:10px 14px}
+  .guide-body{grid-template-columns:minmax(0,1fr)}
+}
 </style>
 
 </head>
@@ -76,14 +128,18 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
     <p class="lede">اختر المدينة والمدة، فيُنشأ لك ملف تقويم بأوقات الصلوات الخمس، يُستورد في تقويم قوقل.</p>
   </header>
 
-  <form class="card" id="f" novalidate>
+  <section class="card bar" aria-label="الموقع والمدة">
     <div class="locate" id="locateBox" hidden>
-      <button type="button" class="ghost" id="locate">📍 تحديد المدينة من موقعي الحالي</button>
+      <button type="button" class="ghost" id="locate">📍 <span class="long">تحديد المدينة من موقعي الحالي</span><span class="short">موقعي الحالي</span></button>
       <p class="hint" id="locateSt" role="status"></p>
     </div>
-    <div class="row">
+    <div class="row place">
       <label for="country">الدولة<select id="country"></select></label>
       <label for="city">المدينة<select id="city"></select></label>
+    </div>
+    <div class="row dates">
+      <label for="from">من يوم<input id="from" type="date"></label>
+      <label for="to">إلى يوم<input id="to" type="date"></label>
     </div>
     <div class="custom" id="customBox" hidden>
       <div class="row">
@@ -92,10 +148,9 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
       </div>
       <label for="cname">اسم الموقع (يظهر في اسم التقويم)<input id="cname" type="text" maxlength="40" placeholder="مثلًا: حي النرجس"></label>
     </div>
-    <div class="row">
-      <label for="from">من يوم<input id="from" type="date"></label>
-      <label for="to">إلى يوم<input id="to" type="date"></label>
-    </div>
+  </section>
+
+  <section class="card opts" aria-label="طريقة الحساب ومدد المواعيد">
     <label for="method">طريقة الحساب<select id="method"></select></label>
     <p class="hint" id="methodHint"></p>
     <div style="display:grid;gap:8px">
@@ -110,21 +165,23 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
       </div>
       <p class="hint">وفي كل موعد تنبيه قبل الأذان بعشر دقائق.</p>
     </div>
-  </form>
+  </section>
 
-  <section class="card" aria-labelledby="pv">
+  <section class="card side" aria-labelledby="pv">
     <h2 id="pv">أوقات الأذان في أول يوم</h2>
     <table><thead><tr><th>الصلاة</th><th class="h">الأذان</th></tr></thead><tbody id="tb"></tbody></table>
     <p class="hint" id="tzHint"></p>
-  </section>
-
-  <div class="actions">
+    <div class="actions">
     <button id="dl" type="button">تنزيل ملف التقويم</button>
     <button id="copy" type="button" class="ghost" hidden>نسخ محتوى الملف</button>
     <p class="status" id="st" role="status"></p>
     <p class="hint" id="zipHint">يُنزَّل الملف مضغوطًا (‎.zip‎) لأن هذه الصفحة لا تُنزّل ملفات ‎.ics‎ مباشرة. افتحه أولًا، ثم أضف ملف ‎.ics‎ الذي بداخله بإحدى الطرق الآتية.</p>
-    <section class="guide" aria-labelledby="gh">
-      <h2 id="gh">إضافة الملف إلى تقويمك</h2>
+    </div>
+  </section>
+
+  <details class="guide" id="guide" open>
+      <summary><h2 id="gh">إضافة الملف إلى تقويمك</h2></summary>
+      <div class="guide-body">
       <p class="hint">لا تستطيع صفحة ويب أن تكتب في تقويم جهازك مباشرة؛ فالملف هو الطريق، وفتحه يسلّمه إلى تطبيق التقويم. وأيًّا كان التطبيق، أنشئ له تقويمًا جديدًا مستقلًّا قبل الإضافة، ليسهل حذف المواعيد كلها دفعة واحدة إن احتجت.</p>
       <details id="g-mac"><summary>تقويم Apple على ماك <span class="tag">الأسرع لملف كبير</span></summary>
         <ol><li>في تطبيق التقويم: «ملف» ← «تقويم جديد»، وسمّه مثلًا «مواقيت الصلاة».</li>
@@ -137,8 +194,8 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
       <details id="g-google"><summary>تقويم قوقل</summary>
         <ol><li>من متصفح على الحاسوب (لا يتيح تطبيق الجوال الاستيراد): الإعدادات ← «إضافة تقويم» ← «إنشاء تقويم جديد».</li>
         <li>«استيراد وتصدير» ← اختر الملف ← اختر التقويم الجديد ← «استيراد».</li></ol></details>
-    </section>
-  </div>
+      </div>
+  </details>
 </main>
 
 <script>
@@ -332,6 +389,8 @@ const IN_CLAUDE=!!(window.claude&&window.claude.use);
 if(!IN_CLAUDE){$('zipHint').hidden=true;$('locateBox').hidden=false}
 (()=>{const u=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1),mac=/Macintosh/.test(u)&&!ios;
   $(ios?'g-ios':mac?'g-mac':'g-google').open=true})();
+// landscape keeps the guide folded so the form and preview share one screen
+if(matchMedia('(orientation:landscape) and (min-width:700px)').matches)$('guide').open=false;
 (async()=>{try{downloads=IN_CLAUDE?await window.claude.use('downloads'):null}catch(e){downloads=null}
   if(!downloads&&IN_CLAUDE)$('copy').hidden=false})();
 </script>

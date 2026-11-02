@@ -15,6 +15,8 @@ Handoff from a Claude chat session (2026-10-12 → 2026-11-02). The user is Salm
 - Sunrise is deliberately excluded.
 - The preview shows adhan times only. The user rejected an "end time" column, because it suggests the end of the shar'i prayer time. Do not reintroduce it.
 - A day-strip chart was removed as unclear.
+- Layout (chosen 2026-11-02, option "C"): portrait is one column; landscape from 700px wide puts country/city/dates/location in a top bar, with method + durations beside the preview + download below, and the add-to-calendar guide folded underneath. Short landscape screens (phones, height ≤ 560px) use a compact variant. No horizontal scrolling at any width.
+- Fonts: keep Reem Kufi (headings) and IBM Plex Sans Arabic (body) here. The user declined switching this page to Thmanyah.
 - The calculation method defaults by country (Umm al-Qura for KSA: Fajr 18.5°, Isha = Maghrib + 90 min, +120 min in Ramadan detected via `Intl` islamic-umalqura). Asr uses the standard (shadow = 1×) rule. High latitudes use angle-based night portions.
 
 ## Verification already done
